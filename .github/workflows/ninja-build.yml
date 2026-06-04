@@ -33,28 +33,25 @@ jobs:
         run: choco install ninja -y
         shell: cmd
 
+      # -no-prefix：产物直接落在 build/，无需 cmake --install，避免再生成一整棵 install/（doc、include、mkspecs、modules 等）。
+      # -DQT_BUILD_TOOLS_BY_DEFAULT=OFF：默认不编 qmake、androiddeployqt 等独立工具（-nomake tools 尚未接入 CMake）。
       - name: Configure
         shell: cmd
         run: |
           mkdir build
           cd build
-          call ..\configure.bat -prefix "%GITHUB_WORKSPACE%\install" -release -nomake examples -nomake tests -no-gui -no-sbom -no-sql-psql -no-sql-odbc -no-sql-mysql -no-sql-oci -no-sql-db2 -no-sql-ibase -no-sql-mimer -- -DQT_BUILD_TESTS=OFF
+          call ..\configure.bat -no-prefix -release -nomake examples -nomake tests -no-gui -no-sbom -no-sql-psql -no-sql-odbc -no-sql-mysql -no-sql-oci -no-sql-db2 -no-sql-ibase -no-sql-mimer -- -DQT_BUILD_TESTS=OFF -DQT_BUILD_TOOLS_BY_DEFAULT=OFF
 
       - name: Build
         shell: cmd
         working-directory: build
         run: cmake --build . --parallel
 
-      - name: Install
-        shell: cmd
-        working-directory: build
-        run: cmake --install .
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: qtbase-windows
           path: |
-            install
+            build/bin
           if-no-files-found: error
           retention-days: 14
